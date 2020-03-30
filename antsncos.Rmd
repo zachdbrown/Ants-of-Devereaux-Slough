@@ -1,0 +1,166 @@
+---
+title: "antncos"
+author: "Zach Brown"
+date: "March 30, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Load packages
+```{r}
+library(tidyverse)
+library(RColorBrewer)
+library(forcats)
+library(lubridate)
+library(dbplyr)
+library(ggplot2)
+```
+
+2. load and wrangle data
+```{r}
+antsds<- read_csv("ants2020.csv")
+
+
+#make df way less obnoxious
+antssimple <-antsds %>%
+#selecting columns to keep for data analysis
+  select(
+    scientificName, year, samplingProtocol, decimalLatitude, decimalLongitude, individualCount)
+
+#puts months in order numerically and abbr
+#antssimple$month = factor(antssimple$month, levels = month.name, labels = month.abb)
+
+#sum of all individual ants from NCOS
+#sumant <- sum(antssimple$individualCount, na.rm = FALSE)
+
+antsncos<-antssimple %>%
+#excluded anything that doesnt have UCSB Arthropod Survey
+  #filter(recordedBy =="UCSB Arthropod Survey")%>%
+#exluded anything that doesn't have a genera level determination
+  filter(scientificName !="Formicidae")%>%
+  filter(scientificName !="Solenopsidini")
+#filters out Monomorium not identified to species
+  #filter(scientificName !="Monomorium")%>%
+#filters out Temnothorax not identified to species
+  #filter(scientificName !="Temnothorax")
+#sumant <- sum(antsncos$individualCount, na.rm = FALSE)
+#Filters out ants not identified to genus
+#antssimplegenera<-antssimple%>%
+  #filter(scientificName !="Formicidae")%>%
+  #filter(scientificName !="Myrmicinae")
+
+#This cleans data for differently spelled values
+antsncos$samplingProtocol[antsncos$samplingProtocol == "Pan trap"] <- "Pan Trap"
+antsncos$samplingProtocol[antsncos$samplingProtocol == "Pan Trap"] <- "Yellow Pan Trap"
+antsncos$samplingProtocol[antsncos$samplingProtocol == "Pecan cookie baited vial"] <- "Pecan Cookie Baited Vial"
+
+#sum of all ants in ncos
+#sumantncos <- sum(antsncos$individualCount, na.rm = FALSE)
+
+#this is just scientific names and individual count dataframe
+#antstotalncos<-antsncos %>%
+  #select(scientificName, individualCount)
+
+#Temnothorax dataframe only, NCOS
+#temno<-antstotalncos%>%
+  #filter(scientificName == "Temnothorax")
+#sum of individual Temnothorax
+#sumtemno<-sum(temno$individualCount)
+
+#L. humile dataframe only, NCOS
+#lhumile<-antstotalncos%>%
+  #filter(scientificName=="Linepithema humile")
+#sum of individual L. humile
+#sumlhumile<-sum(lhumile$individualCount)
+
+#Solenopsis dataframe only, NCOS
+#solenopsis<-antstotalncos%>%
+  #filter(scientificName=="Solenopsis")
+#sum of individual Solenopsis
+#sumsol<-sum(solenopsis$individualCount)
+
+#Monomorium dataframe only, NCOS
+#mono<-antstotalncos%>%
+  #filter(scientificName=="Monomorium")
+#sum of individual Monomorium
+#summono<-sum(mono$individualCount)
+
+#Hypoponera dataframe only, NCOS
+#hypo<-antstotalncos%>%
+  #filter(scientificName=="Hypoponera")
+#sum of individual Hypoponera
+#sumhypo<-sum(hypo$individualCount)
+
+```
+
+3. data exploration
+```{r}
+#Graph of each genus of ant with actual counts
+
+scinameabund<- ggplot(mutate
+                     (antsncos, scientificName = fct_infreq(scientificName))) + 
+  geom_bar(
+    aes(x = scientificName, fill= scientificName, weight=individualCount))+
+  labs(x="Scientific Name", y="Number of Individual Ants", title = "Collected Ants") +
+  theme_bw()+
+  theme(legend.position = "right",
+        legend.title = element_blank(),
+        panel.border = element_blank(), 
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line.x = element_line(colour = "white"),
+        axis.line.y = element_line(color = "black"),
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())+
+  scale_y_continuous(expand = c(0,0), limits = c(0,1600))
+
+scinameabund
+########################################################################################
+#Bar plot of trap type with actual counts
+
+traptype <- scinameabund + facet_wrap(~samplingProtocol) +labs(title = "Ants Collected by Trap")+
+  scale_y_continuous(expand = c(0,0), limits = c(0,800))
+
+traptype
+########################################################################################
+
+#Stacked plot, not working
+
+#ggplot(antsncos + facet_wrap(~samplingProtocol), aes(x = Year, y = Frequency, fill = Category, label =    Frequency)) +
+  #geom_bar(stat = "identity") +
+  #geom_text(size = 3, position = position_stack(vjust = 0.5))
+
+########################################################################################
+#Plot of ants by month
+
+yearant <- scinameabund + facet_wrap(~year) + labs(title = "Ants Collected by Year")+
+  scale_y_continuous(expand = c(0,0), limits = c(0,900))
+yearant
+
+#######################################################################################
+#Habitats need to be condensed
+
+#habant <- scinameabund + facet_wrap(~habitat) + labs(title = "Ant abundance by habitat")
+#habant
+
+#######################################################################################
+#Histogram of ant occurences and genus
+
+#ggplot(antssimplegenera, aes(x = year)) +
+      #geom_histogram(position = "identity", binwidth=0.75, na.rm = FALSE, show.legend = FALSE, fill="mediumorchid4")+
+  #theme_bw()+
+  #theme(panel.border = element_blank(), 
+        #panel.grid.major = element_blank(),
+        #panel.grid.minor = element_blank(),
+        #axis.line = element_line(color = "black"))+
+  #labs(x= "Year Collected", y= "Number of Occurences", title = "Specimens Collected in Last 70 years (1949-2019)")
+
+#######################################################################################
+
+
+```
+
